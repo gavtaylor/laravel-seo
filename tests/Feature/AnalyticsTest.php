@@ -47,3 +47,11 @@ it('tracks other named routes', function () {
 
     $this->get('/about')->assertOk()->assertSee('googletagmanager', false);
 });
+
+it('renders clean output with no stray blank lines', function () {
+    expect(renderAnalytics())->toStartWith('<script async')->not->toContain("\n\n");
+
+    config()->set('seo.analytics.enabled', false);
+
+    expect(renderAnalytics())->toStartWith('<script>')->not->toContain("\n\n");
+});

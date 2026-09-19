@@ -18,7 +18,13 @@ final class SeoServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/seo.php', 'seo');
+        /** @var array<string, mixed> $defaults */
+        $defaults = require __DIR__.'/../config/seo.php';
+
+        /** @var array<string, mixed> $app */
+        $app = config('seo', []);
+
+        config(['seo' => $this->mergeDefaults($defaults, $app)]);
 
         $this->app->bind(UrlProvider::class, function (Application $app): UrlProvider {
             $custom = config('seo.indexnow.url_provider');
@@ -47,6 +53,31 @@ final class SeoServiceProvider extends ServiceProvider
         }
 
         $this->bootIndexNow();
+    }
+
+    /**
+     * Fill in whatever the app's own config/seo.php leaves out, however
+     * deeply nested. Laravel's mergeConfigFrom() only merges one level, so an
+     * app overriding just `analytics.measurement_id` would otherwise lose the
+     * rest of the `analytics` defaults. Lists (e.g. `exclude_routes`) are
+     * replaced wholesale rather than merged index by index.
+     *
+     * @param  array<string, mixed>  $defaults
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function mergeDefaults(array $defaults, array $overrides): array
+    {
+        foreach ($overrides as $key => $value) {
+            if (is_array($value) && is_array($defaults[$key] ?? null) && ! array_is_list($value)) {
+                /** @var array<string, mixed> $value */
+                $value = $this->mergeDefaults($defaults[$key], $value);
+            }
+
+            $defaults[$key] = $value;
+        }
+
+        return $defaults;
     }
 
     /**
