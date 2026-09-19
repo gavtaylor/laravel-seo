@@ -122,6 +122,20 @@ return [
         'exclude' => [],
 
         /*
+        |----------------------------------------------------------------------
+        | Hash ignore
+        |----------------------------------------------------------------------
+        |
+        | Regular expressions removed from a page's HTML before it is hashed,
+        | for markup that changes between requests without the page really
+        | changing (a random banner, a timestamp). CSRF tokens, nonces and
+        | inline <svg> blocks are always ignored.
+        |
+        */
+
+        'hash_ignore' => [],
+
+        /*
         |--------------------------------------------------------------------------
         | Timeout
         |--------------------------------------------------------------------------

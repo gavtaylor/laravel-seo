@@ -74,6 +74,8 @@ The command only contacts search engines in the `production` environment. Set `I
 
 If `gavtaylor/laravel-sitemap` is installed, its route scan is used, so there is no second list to maintain. Otherwise list absolute URLs in `seo.indexnow.urls`, or point `seo.indexnow.url_provider` at your own class implementing `GavTaylor\Seo\IndexNow\Contracts\UrlProvider`.
 
+CSRF tokens, nonces and inline `<svg>` blocks are ignored when hashing, so a randomly rotated decorative graphic does not count as a change. List regular expressions for anything else that varies between requests (a timestamp, a random banner) in `seo.indexnow.hash_ignore`.
+
 Pages are fetched over HTTP from their public URL, so the command works even when run as a user that cannot write to `storage/` (for example a locked-down deploy user). Redirecting and non-200 pages are skipped. Use `seo.indexnow.exclude` to skip URL patterns.
 
 ## Configuration

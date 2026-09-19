@@ -16,3 +16,19 @@ it('changes when the visible content changes', function () {
 
     expect($hasher->hash('<p>One</p>'))->not->toBe($hasher->hash('<p>Two</p>'));
 });
+
+it('ignores inline svg, which sites often rotate at random', function () {
+    $a = '<p>Hello</p><svg viewBox="0 0 1 1"><path d="M0 0"/></svg>';
+    $b = '<p>Hello</p><svg viewBox="0 0 9 9"><path d="M9 9"/><g/></svg>';
+
+    expect((new ContentHasher)->hash($a))->toBe((new ContentHasher)->hash($b));
+});
+
+it('strips extra patterns listed in seo.indexnow.hash_ignore', function () {
+    config()->set('seo.indexnow.hash_ignore', ['/<time\b.*?<\/time>/is']);
+
+    $a = '<p>Hi</p><time>10:01</time>';
+    $b = '<p>Hi</p><time>10:02</time>';
+
+    expect((new ContentHasher)->hash($a))->toBe((new ContentHasher)->hash($b));
+});
