@@ -1,0 +1,103 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "gavtaylor/laravel-seo",
+    "description": "One place for a Laravel site's SEO plumbing: Google Analytics and IndexNow, each switched on only when its tracking code or key is configured.",
+    "keywords": [
+        "laravel",
+        "gavtaylor",
+        "laravel-seo",
+        "indexnow",
+        "google-analytics",
+        "seo"
+    ],
+    "homepage": "https://github.com/gavtaylor/laravel-seo",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Gavin Taylor",
+            "homepage": "https://gavtaylor.uk",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "illuminate/console": "^12.0||^13.0",
+        "illuminate/contracts": "^12.0||^13.0",
+        "illuminate/database": "^12.0||^13.0",
+        "illuminate/http": "^12.0||^13.0",
+        "illuminate/support": "^12.0||^13.0"
+    },
+    "require-dev": {
+        "gavtaylor/laravel-sitemap": "0.*",
+        "larastan/larastan": "^3.9",
+        "laravel/pint": "^1.29",
+        "laravel/pao": "^1.0",
+        "orchestra/testbench": "^10.0||^11.0",
+        "pestphp/pest": "^4.6||^5.0",
+        "pestphp/pest-plugin-laravel": "^4.1||^5.0",
+        "pestphp/pest-plugin-type-coverage": "^4.0||^5.0",
+        "phpstan/extension-installer": "^1.4"
+    },
+    "suggest": {
+        "gavtaylor/laravel-sitemap": "Lets IndexNow reuse your sitemap's route scan as its list of URLs, so there is no second list to maintain."
+    },
+    "autoload": {
+        "psr-4": {
+            "GavTaylor\\Seo\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "GavTaylor\\Seo\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "@clear",
+            "@prepare"
+        ],
+        "prepare": [
+            "@php vendor/bin/testbench package:discover --ansi"
+        ],
+        "lint": [
+            "vendor/bin/pint --parallel"
+        ],
+        "lint:check": [
+            "vendor/bin/pint --parallel --test"
+        ],
+        "analyse": [
+            "vendor/bin/phpstan analyse"
+        ],
+        "test:types": [
+            "vendor/bin/pest --type-coverage --min=100"
+        ],
+        "test:unit": [
+            "vendor/bin/pest --parallel"
+        ],
+        "test": [
+            "@analyse",
+            "@lint:check",
+            "@test:types",
+            "@test:unit"
+        ],
+        "clear": [
+            "@php vendor/bin/testbench package:purge-skeleton --ansi"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "GavTaylor\\Seo\\SeoServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
