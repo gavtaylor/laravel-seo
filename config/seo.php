@@ -128,8 +128,9 @@ return [
         |
         | Regular expressions removed from a page's HTML before it is hashed,
         | for markup that changes between requests without the page really
-        | changing (a random banner, a timestamp). CSRF tokens, nonces and
-        | inline <svg> blocks are always ignored.
+        | changing (a random banner, a timestamp). CSRF tokens, nonces,
+        | inline <svg> blocks and CSS/JS cache-busting versions (a ?v= or ?id=
+        | query string, Vite's hashed build filenames) are always ignored.
         |
         */
 

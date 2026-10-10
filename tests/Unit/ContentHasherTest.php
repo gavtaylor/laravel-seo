@@ -24,6 +24,34 @@ it('ignores inline svg, which sites often rotate at random', function () {
     expect((new ContentHasher)->hash($a))->toBe((new ContentHasher)->hash($b));
 });
 
+it('ignores cache-busting query strings on stylesheets and scripts', function () {
+    $a = '<link rel="stylesheet" href="/css/app.css?v=1700000000"><script src="/js/app.js?id=abc123"></script><p>Hello</p>';
+    $b = '<link rel="stylesheet" href="/css/app.css?v=1700009999"><script src="/js/app.js?id=def456"></script><p>Hello</p>';
+
+    expect((new ContentHasher)->hash($a))->toBe((new ContentHasher)->hash($b));
+});
+
+it('ignores the content hash vite adds to built asset filenames', function () {
+    $a = '<link rel="stylesheet" href="/build/assets/app-BHt8xL2a.css"><script type="module" src="/build/assets/app-Dk3_9qZr.js"></script><p>Hello</p>';
+    $b = '<link rel="stylesheet" href="/build/assets/app-C7mPq1-X.css"><script type="module" src="/build/assets/app-a1B2c3D4.js"></script><p>Hello</p>';
+
+    expect((new ContentHasher)->hash($a))->toBe((new ContentHasher)->hash($b));
+});
+
+it('still notices when a page links a different asset', function () {
+    $hasher = new ContentHasher;
+
+    expect($hasher->hash('<link rel="stylesheet" href="/css/app.css?v=1">'))
+        ->not->toBe($hasher->hash('<link rel="stylesheet" href="/css/print.css?v=1">'));
+});
+
+it('leaves query strings on page links alone', function () {
+    $hasher = new ContentHasher;
+
+    expect($hasher->hash('<a href="/events?month=1">Events</a>'))
+        ->not->toBe($hasher->hash('<a href="/events?month=2">Events</a>'));
+});
+
 it('strips extra patterns listed in seo.indexnow.hash_ignore', function () {
     config()->set('seo.indexnow.hash_ignore', ['/<time\b.*?<\/time>/is']);
 
