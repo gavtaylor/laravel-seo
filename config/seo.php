@@ -137,6 +137,28 @@ return [
         'hash_ignore' => [],
 
         /*
+        |----------------------------------------------------------------------
+        | Ignore layout
+        |----------------------------------------------------------------------
+        |
+        | Leave the site's shared layout chrome out of the hash, so changing
+        | the nav, footer or analytics tags does not resubmit every page. On by
+        | default. These are ignored: <header> and <footer> elements that are not
+        | inside <main> or an <article> (an article's own header, with its
+        | title and date, still counts), and every <script> except JSON-LD
+        | structured data. Everything else in <head>, such as the title and
+        | meta description, still counts.
+        |
+        | Turn it off (INDEXNOW_IGNORE_LAYOUT=false) if your layout puts page
+        | content, such as a hero with the page's <h1>, in a <header> outside
+        | <main>. Switching it either way changes every page's hash, so the
+        | next run of indexnow:submit resubmits every page once.
+        |
+        */
+
+        'ignore_layout' => env('INDEXNOW_IGNORE_LAYOUT', true),
+
+        /*
         |--------------------------------------------------------------------------
         | Timeout
         |--------------------------------------------------------------------------

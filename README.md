@@ -76,11 +76,21 @@ If `gavtaylor/laravel-sitemap` is installed, its route scan is used, so there is
 
 CSRF tokens, nonces and inline `<svg>` blocks are ignored when hashing, so a randomly rotated decorative graphic does not count as a change. So are cache-busting versions on stylesheets and scripts (a `?v=` or `?id=` query string on a `.css` or `.js` URL, and the hash Vite adds to built filenames), so rebuilding assets does not resubmit every page. List regular expressions for anything else that varies between requests (a timestamp, a random banner) in `seo.indexnow.hash_ignore`.
 
+The site's shared layout chrome is ignored too, so a change to the site-wide nav, footer or analytics tags does not resubmit every page. That means `<header>` and `<footer>` elements that are not inside `<main>` or an `<article>`, and every `<script>` except `<script type="application/ld+json">` structured data, are left out of the hash. A header inside the page's `<main>` or an `<article>` (typically a post's title and date) still counts, as does everything else in `<head>`, such as the title and meta description. Custom elements such as `<header-nav>` are not treated as headers.
+
+If your layout puts page content in a `<header>` outside `<main>` (a hero with the page's `<h1>`, say), turn this off so changes to it still count:
+
+```dotenv
+INDEXNOW_IGNORE_LAYOUT=false
+```
+
+Switching it either way changes how every page is hashed, so the next run resubmits every page once.
+
 Pages are fetched over HTTP from their public URL, so the command works even when run as a user that cannot write to `storage/` (for example a locked-down deploy user). Redirecting and non-200 pages are skipped. Use `seo.indexnow.exclude` to skip URL patterns.
 
 ## Configuration
 
-See [`config/seo.php`](config/seo.php); every option is commented. The environment variables are `GOOGLE_ANALYTICS_MEASUREMENT_ID`, `GOOGLE_ANALYTICS_ENABLED`, `INDEXNOW_KEY`, `INDEXNOW_ENABLED`, `INDEXNOW_HOST` and `INDEXNOW_ENDPOINT`.
+See [`config/seo.php`](config/seo.php); every option is commented. The environment variables are `GOOGLE_ANALYTICS_MEASUREMENT_ID`, `GOOGLE_ANALYTICS_ENABLED`, `INDEXNOW_KEY`, `INDEXNOW_ENABLED`, `INDEXNOW_HOST`, `INDEXNOW_ENDPOINT` and `INDEXNOW_IGNORE_LAYOUT`.
 
 ## Testing
 

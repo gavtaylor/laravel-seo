@@ -9,8 +9,10 @@ namespace GavTaylor\Seo\IndexNow;
  * every request (CSRF tokens, nonces), that are purely decorative (inline
  * SVG, which sites often rotate at random), or that change on every asset
  * build without the content changing (CSS/JS cache-busting versions), so an
- * unchanged page always hashes the same and is never resubmitted. Extra
- * regular expressions to strip can be listed in `seo.indexnow.hash_ignore`.
+ * unchanged page always hashes the same and is never resubmitted. The site's
+ * shared layout chrome is left out too, unless `seo.indexnow.ignore_layout`
+ * is turned off. Extra regular expressions to strip can be listed in
+ * `seo.indexnow.hash_ignore`.
  */
 final class ContentHasher
 {
@@ -28,6 +30,10 @@ final class ContentHasher
         $html = (string) preg_replace('/(\.(?:css|js|mjs))\?[^"\'\s>]*/i', '$1', $html);
         $html = (string) preg_replace('#(/build/assets/[^"\'\s>?]+?)-[A-Za-z0-9_-]{8}(\.(?:css|js|mjs))#i', '$1$2', $html);
 
+        if (config('seo.indexnow.ignore_layout', true) === true) {
+            $html = $this->stripLayout($html);
+        }
+
         /** @var list<string> $ignore */
         $ignore = config('seo.indexnow.hash_ignore', []);
 
@@ -38,5 +44,38 @@ final class ContentHasher
         $html = (string) preg_replace('/\s+/', ' ', $html);
 
         return hash('sha256', trim($html));
+    }
+
+    /**
+     * Remove the layout's site-wide <header> and <footer> and every <script>
+     * except JSON-LD structured data, so a nav, footer or analytics change
+     * does not count as every page changing. A <header> or <footer> inside
+     * <main> or an <article> (a post's title and date) is content, so those
+     * blocks are set aside first and put back afterwards.
+     */
+    private function stripLayout(string $html): string
+    {
+        $html = (string) preg_replace('/<script\b(?![^>]*application\/ld\+json)[^>]*>.*?<\/script>/is', '', $html);
+
+        /** @var list<string> $kept */
+        $kept = [];
+
+        $html = (string) preg_replace_callback(
+            '/<(main|article)(?=[\s>]).*?<\/\1>/is',
+            function (array $match) use (&$kept): string {
+                $kept[] = $match[0];
+
+                return "\x00".(count($kept) - 1)."\x00";
+            },
+            $html,
+        );
+
+        $html = (string) preg_replace('/<(header|footer)(?=[\s>]).*?<\/\1>/is', '', $html);
+
+        return (string) preg_replace_callback(
+            '/\x00(\d+)\x00/',
+            fn (array $match): string => $kept[(int) $match[1]],
+            $html,
+        );
     }
 }

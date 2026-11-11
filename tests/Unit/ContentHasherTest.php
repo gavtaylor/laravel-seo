@@ -60,3 +60,119 @@ it('strips extra patterns listed in seo.indexnow.hash_ignore', function () {
 
     expect((new ContentHasher)->hash($a))->toBe((new ContentHasher)->hash($b));
 });
+
+/**
+ * A page shaped like a typical Blade layout, with the parts a test wants to
+ * vary passed in.
+ */
+function layoutPage(array $parts = []): string
+{
+    $parts += [
+        'title' => 'About us',
+        'head' => '',
+        'nav' => '<a href="/">Home</a>',
+        'article_header' => '<h1>About us</h1><time>1 May</time>',
+        'body' => '<p>We are a community group.</p>',
+        'json_ld' => '{"@type":"Organization","name":"Example"}',
+        'footer' => '<p>Registered charity</p>',
+        'scripts' => '',
+    ];
+
+    return <<<HTML
+        <!doctype html>
+        <html>
+        <head>
+            <title>{$parts['title']}</title>
+            {$parts['head']}
+            <script type="application/ld+json">{$parts['json_ld']}</script>
+        </head>
+        <body>
+            <header class="site-header"><nav>{$parts['nav']}</nav></header>
+            <main>
+                <article>
+                    <header>{$parts['article_header']}</header>
+                    {$parts['body']}
+                </article>
+            </main>
+            <footer>{$parts['footer']}</footer>
+            {$parts['scripts']}
+        </body>
+        </html>
+        HTML;
+}
+
+/**
+ * Layout edits that should not count as a content change once
+ * seo.indexnow.ignore_layout is on.
+ */
+dataset('layout changes', [
+    'site header' => [['nav' => '<a href="/">Home</a><a href="/news">News</a>']],
+    'site footer' => [['footer' => '<p>Registered charity</p><a href="/privacy" data-ga="footer">Privacy</a>']],
+    'inline script' => [['scripts' => '<script>document.addEventListener("click", () => gtag("event", "click"))</script>']],
+    'analytics tag in head' => [['head' => '<script async src="https://www.googletagmanager.com/gtag/js?id=G-1"></script><script>gtag("config", "G-1")</script>']],
+]);
+
+it('ignores layout header, footer and script changes when ignore_layout is on', function (array $change) {
+    config()->set('seo.indexnow.ignore_layout', true);
+    $hasher = new ContentHasher;
+
+    expect($hasher->hash(layoutPage($change)))->toBe($hasher->hash(layoutPage()));
+})->with('layout changes');
+
+it('ignores layout changes by default', function () {
+    $hasher = new ContentHasher;
+
+    expect(config('seo.indexnow.ignore_layout'))->toBeTrue()
+        ->and($hasher->hash(layoutPage(['nav' => '<a href="/news">News</a>'])))->toBe($hasher->hash(layoutPage()));
+});
+
+it('counts layout header, footer and script changes when ignore_layout is off', function (array $change) {
+    config()->set('seo.indexnow.ignore_layout', false);
+    $hasher = new ContentHasher;
+
+    expect($hasher->hash(layoutPage($change)))->not->toBe($hasher->hash(layoutPage()));
+})->with('layout changes');
+
+/**
+ * Edits that are content and must still count with ignore_layout on.
+ */
+dataset('content changes', [
+    'article header' => [['article_header' => '<h1>About the association</h1><time>1 May</time>']],
+    'main body' => [['body' => '<p>We are a community association.</p>']],
+    'json-ld structured data' => [['json_ld' => '{"@type":"Organization","name":"Renamed"}']],
+    'head title' => [['title' => 'About the association']],
+    'meta description' => [['head' => '<meta name="description" content="New summary">']],
+]);
+
+it('still counts content changes when ignore_layout is on', function (array $change) {
+    config()->set('seo.indexnow.ignore_layout', true);
+    $hasher = new ContentHasher;
+
+    expect($hasher->hash(layoutPage($change)))->not->toBe($hasher->hash(layoutPage()));
+})->with('content changes');
+
+it('keeps a header inside main that is not in an article', function () {
+    config()->set('seo.indexnow.ignore_layout', true);
+    $hasher = new ContentHasher;
+
+    expect($hasher->hash('<main><header><h1>Events</h1></header></main>'))
+        ->not->toBe($hasher->hash('<main><header><h1>News</h1></header></main>'));
+});
+
+it('keeps an article header on a page without a main element', function () {
+    config()->set('seo.indexnow.ignore_layout', true);
+    $hasher = new ContentHasher;
+
+    expect($hasher->hash('<header>Site</header><article><header><h1>One</h1></header></article>'))
+        ->not->toBe($hasher->hash('<header>Site</header><article><header><h1>Two</h1></header></article>'));
+});
+
+it('does not treat custom elements as layout headers or footers', function () {
+    config()->set('seo.indexnow.ignore_layout', true);
+    $hasher = new ContentHasher;
+
+    expect($hasher->hash('<header-nav>One</header-nav><footer-links>A</footer-links>'))
+        ->not->toBe($hasher->hash('<header-nav>Two</header-nav><footer-links>A</footer-links>'))
+        ->and($hasher->hash('<footer-links>A</footer-links>'))
+        ->not->toBe($hasher->hash('<footer-links>B</footer-links>'));
+});
