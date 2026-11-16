@@ -38,6 +38,42 @@ Put the component in your layout's `<head>`:
 - `gtag()` is always defined as a harmless queue, so inline handlers like `onclick="gtag('event', ...)"` never throw when tracking is off.
 - With no measurement ID the component outputs only that stub.
 
+### Privacy defaults
+
+Analytics loads for statistics only, and each visitor's browser has the last word:
+
+- **Statistics only.** `gtag('config')` gets `allow_google_signals: false` and `allow_ad_personalization_signals: false`, so Google's cross-device, demographics and advertising features stay off. Change the parameters in `seo.analytics.gtag_config`.
+- **Global Privacy Control.** A browser sending GPC (`navigator.globalPrivacyControl`) is treated as an opt-out and the Google script is never requested. Set `seo.analytics.global_privacy_control` to `false` to ignore it.
+- **Opt-out.** A visitor who turns analytics off with the switch below gets `analytics-opt-out` = `1` in localStorage (key: `seo.analytics.opt_out_key`), and the Google script is never requested for them. The check runs in the browser, so it works on cached pages.
+
+The script is added from an inline script after those checks, rather than with a static `<script src>` tag.
+
+### The opt-out switch
+
+Put this on your cookies page:
+
+```blade
+<x-seo::analytics-opt-out />
+```
+
+It renders a status line and a button, hidden until its script runs (so visitors without JavaScript, who aren't running Analytics anyway, don't see a dead button). The button saves or clears the opt-out, and on opting out it sets Google's own `window['ga-disable-<id>']` switch to stop the copy already running on the page, and deletes the `_ga` and `_ga_*` cookies at every domain level. When the browser sends GPC, the status says so and the button is hidden. The switch works even where Analytics isn't loaded (locally, say), so the choice can be made ahead of time.
+
+To use your own markup, pass it as the slot. Keep an element with `data-analytics-status` (the status text goes here; give it `role="status"`) and a button with `data-analytics-toggle`. Attributes such as `class` go on the wrapper, whose id is `analytics-opt-out` unless you pass another.
+
+```blade
+<x-seo::analytics-opt-out class="my-6 rounded-lg border p-5">
+    <h3>Analytics in this browser</h3>
+    <p data-analytics-status role="status"></p>
+    <button type="button" data-analytics-toggle>Turn analytics off</button>
+</x-seo::analytics-opt-out>
+```
+
+Every message can be changed with an attribute: `gpc-message`, `off-message`, `on-message`, `turned-off-message`, `turned-on-message`, `unsaved-message` (the browser refused to save the choice), `turn-off-label` and `turn-on-label`.
+
+### Content Security Policy
+
+Both components are inline scripts. They carry Laravel's Vite CSP nonce (`Vite::useCspNonce()`) when one is set, so they run under a policy without `'unsafe-inline'`. Pass `nonce="..."` to either component to use a different one. The policy's `script-src` also needs `https://www.googletagmanager.com`, and `connect-src` needs Google Analytics' collection hosts.
+
 ## IndexNow
 
 [IndexNow](https://www.bing.com/indexnow/getstarted) tells Bing, Yandex, Naver, Seznam and others when pages change, so you do not submit URLs by hand. Google does not support it. Nothing is added to your pages: the package makes one server-side API request and serves a small key file.

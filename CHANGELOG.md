@@ -1,6 +1,18 @@
 # Release Notes
 
-## [Unreleased](https://github.com/gavtaylor/laravel-seo/compare/v0.2.0...main)
+## [Unreleased](https://github.com/gavtaylor/laravel-seo/compare/v0.3.0...main)
+
+## [v0.3.0](https://github.com/gavtaylor/laravel-seo/compare/v0.2.0...v0.3.0) - 2026-11-16
+
+### Added
+
+- `<x-seo::analytics-opt-out />`, an on/off switch for a cookies page. It saves the visitor's choice in localStorage, stops the copy of Analytics already running on the page and deletes the `_ga` cookies. It takes the site's own markup as its slot and every message as an attribute.
+- Both analytics components carry Laravel's Vite CSP nonce when one is set, or a `nonce` attribute, so they work under a Content-Security-Policy without `'unsafe-inline'`.
+
+### Changed
+
+- `<x-seo::analytics />` now loads Analytics for statistics only (`allow_google_signals` and `allow_ad_personalization_signals` off, configurable in `seo.analytics.gtag_config`), and doesn't load it at all when the browser sends Global Privacy Control (`seo.analytics.global_privacy_control`) or the visitor has opted out (`seo.analytics.opt_out_key`). Existing layouts need no change to get this.
+- The Google script is now added by the inline script after those checks, not by a static `<script async src>` tag. A site with a Content-Security-Policy needs to let the inline script run (see the README).
 
 ## [v0.2.0](https://github.com/gavtaylor/laravel-seo/compare/v0.1.3...v0.2.0) - 2026-11-11
 

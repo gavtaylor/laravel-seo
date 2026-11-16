@@ -14,8 +14,19 @@ return [
     | (as a harmless queue) so inline click handlers that call it never throw,
     | but the Google script itself is only added when "enabled" is true.
     |
+    | Even then, the visitor's browser decides last: the script is not loaded
+    | when it sends a Global Privacy Control signal or when the visitor has
+    | turned analytics off with <x-seo::analytics-opt-out /> (saved under
+    | "opt_out_key" in localStorage).
+    |
     | enabled:        null = production only. true/false to force.
     | exclude_routes: Route name patterns that are never tracked (Str::is).
+    | opt_out_key:    localStorage key holding '1' once a visitor opts out.
+    | global_privacy_control: Treat a GPC signal as an opt-out.
+    | gtag_config:    Parameters passed to gtag('config'). The defaults keep
+    |                 Analytics to statistics only: no Google signals
+    |                 (cross-device and demographics) and no ad
+    |                 personalisation.
     |
     */
 
@@ -23,6 +34,12 @@ return [
         'measurement_id' => env('GOOGLE_ANALYTICS_MEASUREMENT_ID'),
         'enabled' => env('GOOGLE_ANALYTICS_ENABLED'),
         'exclude_routes' => ['admin.*'],
+        'opt_out_key' => 'analytics-opt-out',
+        'global_privacy_control' => true,
+        'gtag_config' => [
+            'allow_google_signals' => false,
+            'allow_ad_personalization_signals' => false,
+        ],
     ],
 
     /*
